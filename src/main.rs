@@ -32,7 +32,7 @@ fn main() {
                 continue;
             };
             if input.trim() == "uci" {
-                println!("id name NULL");
+                println!("id name Flawed Formula");
                 println!("id author mendelsshop");
                 // print set options
                 println!("uciok");
