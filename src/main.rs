@@ -21,28 +21,9 @@ fn main() {
     let queue2 = Arc::clone(&queue);
     std::thread::spawn(move || {
         loop {
-            // println!("ddfd");
-            // if let Ok(m) = rx_go.recv_timeout(std::time::Duration::from_millis(100)) {
-            //     // set = false;
-            //     println!("info bestmove {:?}", m);
-            //     best_move = m;
-            //     go = false;
-
-            // }
-
-            // if let Ok(new_gs) = rx_set.recv_timeout(std::time::Duration::from_millis(100)) {
-            //     gs = new_gs;
-            //     println!("position set");
-            //     println!("{}", gs.get_board());
-            //     set = false;
-            //     if go {
-            //         thread_find_move(&gs, tx_go.clone());
-            //     }
-            // }
-            // let input = String::new();
             let input: String = if let Ok(mut q) = queue2.lock() {
                 if let Some(i) = q.pop_front() {
-                    println!("pop {i}");
+                    println!("info pop {i}");
                     i
                 } else {
                     continue;
@@ -99,7 +80,7 @@ fn main() {
 
         res.read_line(&mut input).unwrap();
 
-        println!("input: {}", input);
+        println!("info input: {}", input);
         queue.lock().unwrap().push_back(input.clone());
         // push(input.clone());
     }
@@ -202,10 +183,6 @@ fn get_move(
             _ => None,
         }
     };
-
-    // note split_at can panic
-    // let (start, end) = move_str.split_at(move_str.len(), 2);
-
     let start_pos = Pos::from_str(start).ok()?;
     let end_pos = Pos::from_str(end).ok()?;
 
