@@ -60,17 +60,21 @@ fn main() {
 
                 println!("{}", make_info(format!("gs fen {}", gs.to_string()).as_str()));
             } else if input.trim().starts_with("go") {
+                println!("{}", make_info(format!("going for color {:?}", gs.get_active_color()).as_str()));
                 if let Some((m, p)) = minimax::minimax(&mut gs, 3) {
                     let p = if let Some(p) = p {
+                        println!("{}", make_info(format!("prom piece: {:?} move {:?}", p, m).as_str()));
                         match p {
-                            Colored::White(Piece::Queen) => Some('q'),
-                            Colored::White(Piece::Rook) => Some('r'),
-                            Colored::White(Piece::Bishop) => Some('b'),
-                            Colored::White(Piece::Knight) => Some('n'),
-                            Colored::Black(Piece::Queen) => Some('Q'),
-                            Colored::Black(Piece::Rook) => Some('R'),
-                            Colored::Black(Piece::Bishop) => Some('B'),
-                            Colored::Black(Piece::Knight) => Some('N'),
+                            Colored::Black(Piece::Queen) => Some('q'),
+                            Colored::Black(Piece::Rook) => Some('r'),
+                            Colored::Black(Piece::Bishop) => Some('b'),
+                            Colored::Black(Piece::Knight) => Some('n'),
+                            Colored::White(Piece::Queen) => Some('Q'),
+                            Colored::White(Piece::Rook) => Some('R'),
+                            Colored::White(Piece::Bishop) => Some('B'),
+                            Colored::White(Piece::Knight) => Some('N'),
+
+
                             _ => None,
                         }
                     } else {
@@ -165,13 +169,18 @@ fn set_position(pos_str: &str, current_moves: &mut Vec<String>, gs: &mut GameSta
             //     }
             // }
             for r#move in split_str {
-                if let Some(m) = get_move(r#move, gs) {
-                    if gs.do_move(m.0, m.1) {
-                        // println!("# info move {} done", r#move);
-                        println!("{}", make_info(format!("move {} done", r#move).as_str()));
-                    } else {
-                        // println!("# info error move {} failed", r#move);
-                        println!("{}", make_info(format!("move {} failed", r#move).as_str()));
+                match get_move(r#move, gs) {
+                    Ok(m) => {
+                        if gs.do_move(m.0, m.1) {
+                            // println!("# info move {} done", r#move);
+                            println!("{}", make_info(format!("move {} done", r#move).as_str()));
+                        } else {
+                            // println!("# info error move {} failed", r#move);
+                            println!("{}", make_info(format!("move {} failed", r#move).as_str()));
+                        }
+                    }
+                    Err(e) => {
+                        println!("{}", make_info(format!("error: {}", e).as_str()));
                     }
                 }
             }
@@ -202,7 +211,7 @@ fn thread_set_move(gs: GameState, tx: Sender<GameState>, pos_str: String) {
 fn get_move(
     move_str: &str,
     gs: &mut GameState,
-) -> Option<(MoveType<Pos, Colored<Piece>>, Option<Colored<Piece>>)> {
+) -> Result<(MoveType<Pos, Colored<Piece>>, Option<Colored<Piece>>), String> {
     // split the move at the first 2 chars (the start pos) the second 2 chars (the end pos) and optionaly the 3rd char (the promotion piece)
     let (start, end) = move_str.split_at(2);
     let (end, promotion) = end.split_at(2);
@@ -212,19 +221,17 @@ fn get_move(
         None
     } else {
         match promotion.chars().next().unwrap() {
-            'q' => Some(Colored::White(Piece::Queen)),
-            'r' => Some(Colored::White(Piece::Rook)),
-            'b' => Some(Colored::White(Piece::Bishop)),
-            'n' => Some(Colored::White(Piece::Knight)),
-            'Q' => Some(Colored::Black(Piece::Queen)),
-            'R' => Some(Colored::Black(Piece::Rook)),
-            'B' => Some(Colored::Black(Piece::Bishop)),
-            'N' => Some(Colored::Black(Piece::Knight)),
+            'q' => Some((Piece::Queen)),
+            'r' => Some((Piece::Rook)),
+            'b' => Some((Piece::Bishop)),
+            'n' => Some((Piece::Knight)),
+            
+
             _ => None,
         }
     };
-    let start_pos = Pos::from_str(start).ok()?;
-    let end_pos = Pos::from_str(end).ok()?;
+    let start_pos = Pos::from_str(start).map_err(|_| "invalid start pos".to_string())?;
+    let end_pos = Pos::from_str(end).map_err(|_| "invalid end pos".to_string())?;
 
     // get all the moves
     let moves = gs.new_all_valid_moves(gs.get_active_color());
@@ -233,7 +240,7 @@ fn get_move(
     moves
         .into_iter()
         .find(|m| m.to() == end_pos && m.from().0 == start_pos)
-        .map(|m| (m, promotion))
+        .map(|m| (m, promotion.map(|prom|Colored::new(m.color(), prom)))).ok_or("invalid move".to_string())
 }
 
 mod tests {
