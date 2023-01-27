@@ -61,7 +61,7 @@ fn main() {
                 println!("{}", make_info(format!("gs fen {}", gs.to_string()).as_str()));
             } else if input.trim().starts_with("go") {
                 println!("{}", make_info(format!("going for color {:?}", gs.get_active_color()).as_str()));
-                if let Some((m, p)) = minimax::minimax(&mut gs, 3) {
+                if let Some((m, p)) = minimax::negamax(&mut gs, 4) {
                     let p = if let Some(p) = p {
                         println!("{}", make_info(format!("prom piece: {:?} move {:?}", p, m).as_str()));
                         match p {
@@ -194,7 +194,7 @@ fn thread_find_move(
 ) {
     let mut gs = gs.clone();
     std::thread::spawn(move || {
-        let best_move = minimax::minimax(&mut gs, 3);
+        let best_move = minimax::minimax(&mut gs, 4);
         tx.send(best_move).unwrap();
     });
 }
